@@ -15,7 +15,9 @@ import com.amigos.courtpulse.mapper.TournamentMapper;
 import com.amigos.courtpulse.repository.ClubRepository;
 import com.amigos.courtpulse.repository.PlayerRepository;
 import com.amigos.courtpulse.repository.TournamentMetadataRepository;
+import com.amigos.courtpulse.service.CacheEvictionService;
 import com.amigos.courtpulse.service.TournamentService;
+import com.amigos.courtpulse.util.CacheNames;
 import com.amigos.courtpulse.util.ObjectUtil;
 import com.amigos.courtpulse.util.TournamentCodeGenerator;
 import java.util.List;
@@ -23,6 +25,7 @@ import java.util.Locale;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -38,6 +41,7 @@ public class TournamentServiceImpl implements TournamentService {
     private final PlayerRepository playerRepository;
     private final TournamentCodeGenerator tournamentCodeGenerator;
     private final TournamentMapper tournamentMapper;
+    private final CacheEvictionService cacheEvictionService;
 
     @Override
     @Transactional
@@ -64,7 +68,8 @@ public class TournamentServiceImpl implements TournamentService {
                 .build();
 
         TournamentMetadata savedTournament = tournamentRepository.save(tournament);
-        log.info("Created tournament {} for club ID {} by player {}", 
+        cacheEvictionService.evictClubTournaments(club.getId(), club.getClubCode());
+        log.info("Created tournament {} for club ID {} by player {}",
                 savedTournament.getTournamentCode(), club.getId(), player.getPlayerCode());
 
         return tournamentMapper.toCreateResponse(savedTournament);
@@ -72,6 +77,7 @@ public class TournamentServiceImpl implements TournamentService {
 
     @Override
     @Transactional(readOnly = true)
+    @Cacheable(cacheNames = CacheNames.TOURNAMENT_DETAILS, key = "#id")
     public TournamentResponse getTournamentById(Long id) {
         TournamentMetadata tournament = tournamentRepository.findById(id)
                 .orElseThrow(() -> new TournamentNotFoundException(id));
@@ -80,6 +86,10 @@ public class TournamentServiceImpl implements TournamentService {
 
     @Override
     @Transactional(readOnly = true)
+    @Cacheable(
+            cacheNames = CacheNames.CLUB_TOURNAMENTS,
+            key = "T(com.amigos.courtpulse.util.CacheKeys).clubIdentifier(#clubIdentifier)"
+    )
     public List<TournamentResponse> getTournamentsByClubIdentifier(String clubIdentifier) {
         Club club;
         if (normalizeRequired(clubIdentifier).matches("^\\d+$")) {

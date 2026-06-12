@@ -29,15 +29,19 @@ import com.amigos.courtpulse.repository.ClubRepository;
 import com.amigos.courtpulse.entity.Player;
 import com.amigos.courtpulse.exception.PlayerNotFoundException;
 import com.amigos.courtpulse.repository.PlayerRepository;
+import com.amigos.courtpulse.service.CacheEvictionService;
 import com.amigos.courtpulse.service.ClubService;
+import com.amigos.courtpulse.util.CacheNames;
 import com.amigos.courtpulse.util.ClubCodeGenerator;
 import com.amigos.courtpulse.util.ObjectUtil;
+import com.amigos.courtpulse.util.PaginationUtil;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Locale;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -50,6 +54,8 @@ public class ClubServiceImpl implements ClubService {
 
     private static final Logger log = LoggerFactory.getLogger(ClubServiceImpl.class);
     private static final int SEARCH_LIMIT = 20;
+    private static final int DEFAULT_MY_CLUBS_LIMIT = 20;
+    private static final int MAX_MY_CLUBS_LIMIT = 50;
     private static final List<ClubMemberRoleEnum> REVIEWER_ROLES = List.of(
             ClubMemberRoleEnum.OWNER,
             ClubMemberRoleEnum.ADMIN
@@ -61,6 +67,7 @@ public class ClubServiceImpl implements ClubService {
     private final PlayerRepository playerRepository;
     private final ClubCodeGenerator clubCodeGenerator;
     private final ClubMapper clubMapper;
+    private final CacheEvictionService cacheEvictionService;
 
     @Override
     @Transactional
@@ -89,12 +96,20 @@ public class ClubServiceImpl implements ClubService {
 
     @Override
     @Transactional(readOnly = true)
+    @Cacheable(
+            cacheNames = CacheNames.CLUB_PROFILES,
+            key = "T(com.amigos.courtpulse.util.CacheKeys).clubCode(#clubCode)"
+    )
     public ClubProfileResponse getClubByCode(String clubCode) {
         return clubMapper.toProfileResponse(findClubByCode(clubCode));
     }
 
     @Override
     @Transactional(readOnly = true)
+    @Cacheable(
+            cacheNames = CacheNames.CLUB_SEARCH,
+            key = "T(com.amigos.courtpulse.util.CacheKeys).searchQuery(#query)"
+    )
     public List<ClubSearchResponse> searchClubs(String query) {
         String normalizedQuery = normalizeOptional(query);
         if (ObjectUtil.isNull(normalizedQuery)) {
@@ -110,9 +125,11 @@ public class ClubServiceImpl implements ClubService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<MyClubResponse> getMyClubs(String playerCode) {
+    public List<MyClubResponse> getMyClubs(String playerCode, Pageable pageable) {
         Player player = findPlayerByCode(playerCode);
-        return clubMemberRepository.findByPlayerIdOrderByJoinedAtDesc(player.getId())
+        Pageable normalizedPageable = PaginationUtil.normalize(pageable, DEFAULT_MY_CLUBS_LIMIT, MAX_MY_CLUBS_LIMIT);
+
+        return clubMemberRepository.findByPlayerIdOrderByJoinedAtDesc(player.getId(), normalizedPageable)
                 .stream()
                 .map(clubMapper::toMyClubResponse)
                 .toList();
@@ -191,6 +208,7 @@ public class ClubServiceImpl implements ClubService {
         }
 
         ClubJoinRequest savedRequest = clubJoinRequestRepository.save(joinRequest);
+        cacheEvictionService.evictClubMembers(joinRequest.getClub().getClubCode());
         log.info("Approved club join request {}", savedRequest.getId());
         return clubMapper.toJoinRequestResponse(savedRequest);
     }
@@ -225,12 +243,17 @@ public class ClubServiceImpl implements ClubService {
         }
 
         clubMemberRepository.delete(clubMember);
+        cacheEvictionService.evictClubMembers(club.getClubCode());
         log.info("Player {} left club {}", player.getPlayerCode(), club.getClubCode());
         return new LeaveClubResponse(club.getClubCode(), player.getPlayerCode(), "LEFT");
     }
 
     @Override
     @Transactional(readOnly = true)
+    @Cacheable(
+            cacheNames = CacheNames.CLUB_MEMBERS,
+            key = "T(com.amigos.courtpulse.util.CacheKeys).clubCode(#clubCode)"
+    )
     public List<ClubMemberResponse> getClubMembers(String clubCode) {
         Club club = findClubByCode(clubCode);
         return clubMemberRepository.findByClubId(club.getId())

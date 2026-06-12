@@ -11,7 +11,9 @@ import com.amigos.courtpulse.exception.PlayerNotFoundException;
 import com.amigos.courtpulse.exception.UsernameAlreadyExistsException;
 import com.amigos.courtpulse.mapper.PlayerMapper;
 import com.amigos.courtpulse.repository.PlayerRepository;
+import com.amigos.courtpulse.service.CacheEvictionService;
 import com.amigos.courtpulse.service.PlayerService;
+import com.amigos.courtpulse.util.CacheNames;
 import com.amigos.courtpulse.util.ObjectUtil;
 import com.amigos.courtpulse.util.PlayerCodeGenerator;
 import java.util.List;
@@ -19,6 +21,7 @@ import java.util.Locale;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -37,6 +40,7 @@ public class PlayerServiceImpl implements PlayerService {
     private final PlayerMapper playerMapper;
     private final PlayerCodeGenerator playerCodeGenerator;
     private final PasswordEncoder passwordEncoder;
+    private final CacheEvictionService cacheEvictionService;
 
     @Override
     @Transactional
@@ -69,6 +73,10 @@ public class PlayerServiceImpl implements PlayerService {
 
     @Override
     @Transactional(readOnly = true)
+    @Cacheable(
+            cacheNames = CacheNames.PLAYER_PROFILES,
+            key = "T(com.amigos.courtpulse.util.CacheKeys).playerCode(#playerCode)"
+    )
     public PlayerProfileResponse getPlayerByCode(String playerCode) {
         Player player = findPlayerByCode(playerCode);
         return playerMapper.toProfileResponse(player);
@@ -91,12 +99,17 @@ public class PlayerServiceImpl implements PlayerService {
         player.setEmail(email);
 
         Player updatedPlayer = playerRepository.save(player);
+        cacheEvictionService.evictPlayerProfile(updatedPlayer.getPlayerCode());
         log.info("Updated player with code {}", updatedPlayer.getPlayerCode());
         return playerMapper.toProfileResponse(updatedPlayer);
     }
 
     @Override
     @Transactional(readOnly = true)
+    @Cacheable(
+            cacheNames = CacheNames.PLAYER_SEARCH,
+            key = "T(com.amigos.courtpulse.util.CacheKeys).searchQuery(#query)"
+    )
     public List<PlayerSearchResponse> searchPlayers(String query) {
         String normalizedQuery = normalizeOptional(query);
         if (ObjectUtil.isNull(normalizedQuery)) {

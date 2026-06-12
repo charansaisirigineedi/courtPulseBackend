@@ -13,6 +13,8 @@ import com.amigos.courtpulse.repository.PlayerRepository;
 import com.amigos.courtpulse.repository.TournamentMatchPlayerRepository;
 import com.amigos.courtpulse.repository.TournamentMatchRepository;
 import com.amigos.courtpulse.repository.TournamentMetadataRepository;
+import com.amigos.courtpulse.service.CacheEvictionService;
+import com.amigos.courtpulse.service.PlayerAnalyticsService;
 import com.amigos.courtpulse.service.TournamentMatchService;
 import com.amigos.courtpulse.util.ObjectUtil;
 import java.util.HashSet;
@@ -33,6 +35,8 @@ public class TournamentMatchServiceImpl implements TournamentMatchService {
     private final TournamentMatchRepository tournamentMatchRepository;
     private final TournamentMatchPlayerRepository tournamentMatchPlayerRepository;
     private final PlayerRepository playerRepository;
+    private final PlayerAnalyticsService playerAnalyticsService;
+    private final CacheEvictionService cacheEvictionService;
 
     @Override
     @Transactional
@@ -52,6 +56,7 @@ public class TournamentMatchServiceImpl implements TournamentMatchService {
                     currentStatus == TournamentStatusEnum.REGISTRATION_CLOSED) {
                 tournament.setStatus(TournamentStatusEnum.IN_PROGRESS);
                 tournamentMetadataRepository.save(tournament);
+                cacheEvictionService.evictTournamentDetails(tournamentId);
                 log.info("Tournament ID: {} transitioned from {} to IN_PROGRESS", tournamentId, currentStatus);
             } else {
                 throw new IllegalArgumentException("Cannot sync matches. Tournament status is not IN_PROGRESS (current: " + currentStatus + ")");
@@ -95,6 +100,8 @@ public class TournamentMatchServiceImpl implements TournamentMatchService {
 
             tournamentMatchPlayerRepository.save(matchPlayer);
         }
+
+        playerAnalyticsService.processMatch(savedMatch.getId());
 
         log.info("Successfully synchronized match ID: {} with {} players", savedMatch.getId(), request.players().size());
         return new SyncMatchResultResponse(savedMatch.getId());

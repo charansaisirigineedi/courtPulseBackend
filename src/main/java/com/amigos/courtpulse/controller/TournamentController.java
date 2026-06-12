@@ -1,11 +1,13 @@
 package com.amigos.courtpulse.controller;
 
+import com.amigos.courtpulse.dto.analytics.TournamentSummaryResponse;
 import com.amigos.courtpulse.dto.common.ApiResponse;
 import com.amigos.courtpulse.dto.tournament.CreateTournamentRequest;
 import com.amigos.courtpulse.dto.tournament.CreateTournamentResponse;
 import com.amigos.courtpulse.dto.tournament.SyncMatchResultRequest;
 import com.amigos.courtpulse.dto.tournament.SyncMatchResultResponse;
 import com.amigos.courtpulse.dto.tournament.TournamentResponse;
+import com.amigos.courtpulse.service.PlayerAnalyticsService;
 import com.amigos.courtpulse.service.TournamentService;
 import com.amigos.courtpulse.service.TournamentMatchService;
 import com.amigos.courtpulse.util.ResponseUtil;
@@ -30,6 +32,7 @@ public class TournamentController {
 
     private final TournamentService tournamentService;
     private final TournamentMatchService tournamentMatchService;
+    private final PlayerAnalyticsService playerAnalyticsService;
 
     @PostMapping("/api/v1/tournaments")
     public ResponseEntity<ApiResponse<CreateTournamentResponse>> createTournament(
@@ -64,6 +67,14 @@ public class TournamentController {
     ) {
         SyncMatchResultResponse response = tournamentMatchService.syncMatchResult(tournamentId, request);
         return ResponseUtil.ok("Match result synchronized successfully", response);
+    }
+
+    @GetMapping("/api/v1/tournaments/{tournamentId}/summary")
+    public ResponseEntity<ApiResponse<TournamentSummaryResponse>> getTournamentSummary(
+            @PathVariable Long tournamentId
+    ) {
+        TournamentSummaryResponse response = playerAnalyticsService.getTournamentSummary(tournamentId);
+        return ResponseUtil.ok("Tournament summary fetched successfully", response);
     }
 
     private String playerCode(Jwt jwt) {

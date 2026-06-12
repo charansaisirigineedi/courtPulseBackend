@@ -9,6 +9,7 @@ import com.amigos.courtpulse.dto.club.LeaveClubResponse;
 import com.amigos.courtpulse.dto.club.MyClubJoinRequestResponse;
 import com.amigos.courtpulse.dto.club.MyClubResponse;
 import java.util.List;
+import org.springframework.data.domain.Pageable;
 
 public interface ClubService {
 
@@ -18,7 +19,7 @@ public interface ClubService {
 
     List<ClubSearchResponse> searchClubs(String query);
 
-    List<MyClubResponse> getMyClubs(String playerCode);
+    List<MyClubResponse> getMyClubs(String playerCode, Pageable pageable);
 
     List<MyClubJoinRequestResponse> getMyJoinRequests(String playerCode);
 

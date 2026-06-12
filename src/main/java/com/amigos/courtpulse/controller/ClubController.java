@@ -10,11 +10,13 @@ import com.amigos.courtpulse.dto.club.LeaveClubResponse;
 import com.amigos.courtpulse.dto.club.MyClubJoinRequestResponse;
 import com.amigos.courtpulse.dto.club.MyClubResponse;
 import com.amigos.courtpulse.service.ClubService;
+import com.amigos.courtpulse.util.PaginationUtil;
 import com.amigos.courtpulse.util.ResponseUtil;
 import jakarta.validation.Valid;
 import java.net.URI;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
@@ -32,6 +34,9 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/v1/clubs")
 @RequiredArgsConstructor
 public class ClubController {
+
+    private static final int DEFAULT_MY_CLUBS_LIMIT = 20;
+    private static final int MAX_MY_CLUBS_LIMIT = 50;
 
     private final ClubService clubService;
 
@@ -63,9 +68,12 @@ public class ClubController {
 
     @GetMapping("/my")
     public ResponseEntity<ApiResponse<List<MyClubResponse>>> getMyClubs(
-            @AuthenticationPrincipal Jwt jwt
+            @AuthenticationPrincipal Jwt jwt,
+            @RequestParam(name = "limit", defaultValue = "20") int limit,
+            @RequestParam(name = "offset", defaultValue = "0") int offset
     ) {
-        List<MyClubResponse> response = clubService.getMyClubs(playerCode(jwt));
+        Pageable pageable = PaginationUtil.toOffsetPageable(limit, offset, DEFAULT_MY_CLUBS_LIMIT, MAX_MY_CLUBS_LIMIT);
+        List<MyClubResponse> response = clubService.getMyClubs(playerCode(jwt), pageable);
         return ResponseUtil.ok("My clubs fetched successfully", response);
     }
 

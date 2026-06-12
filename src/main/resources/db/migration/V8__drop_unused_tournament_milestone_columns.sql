@@ -1,0 +1,8 @@
+ALTER TABLE player_lifetime_stats DROP COLUMN tournaments_participated;
+ALTER TABLE player_lifetime_stats DROP COLUMN tournament_semi_final_reached;
+ALTER TABLE player_lifetime_stats DROP COLUMN tournament_quarter_final_reached;
+ALTER TABLE player_lifetime_stats DROP COLUMN close_match_wins;
+
+ALTER TABLE player_club_stats DROP COLUMN tournaments_participated;
+ALTER TABLE player_club_stats DROP COLUMN tournament_semi_final_reached;
+ALTER TABLE player_club_stats DROP COLUMN tournament_quarter_final_reached;
