@@ -1,0 +1,25 @@
+spring:
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+
+    show-sql: false
+
+  flyway:
+    enabled: true
+
+logging:
+  level:
+    root: INFO
+
+app:
+  security:
+    jwt:
+      issuer: ${JWT_ISSUER:courtpulse}
+      secret: ${JWT_SECRET}
+      access-token-expiration-minutes: ${JWT_ACCESS_TOKEN_EXPIRATION_MINUTES:60}
