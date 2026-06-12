@@ -1,6 +1,7 @@
 package com.amigos.courtpulse.repository;
 
 import com.amigos.courtpulse.entity.Player;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.domain.Pageable;
@@ -11,6 +12,13 @@ import org.springframework.data.repository.query.Param;
 public interface PlayerRepository extends JpaRepository<Player, Long> {
 
     Optional<Player> findByPlayerCode(String playerCode);
+
+    @Query("""
+            SELECT p
+            FROM Player p
+            WHERE UPPER(p.playerCode) IN :playerCodes
+            """)
+    List<Player> findByPlayerCodeIn(@Param("playerCodes") Collection<String> playerCodes);
 
     Optional<Player> findByUsername(String username);
 

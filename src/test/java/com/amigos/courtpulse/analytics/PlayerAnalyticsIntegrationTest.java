@@ -172,6 +172,10 @@ class PlayerAnalyticsIntegrationTest {
         assertEquals(1, championStats.tournamentWins());
         assertEquals(1, runnerUpStats.tournamentRunnerUp());
 
+        TournamentMetadata completedTournament = tournamentMetadataRepository.findById(singlesTournament.getId())
+                .orElseThrow();
+        assertEquals(TournamentStatusEnum.COMPLETED, completedTournament.getStatus());
+
         TournamentSummaryResponse summary =
                 playerAnalyticsService.getTournamentSummary(singlesTournament.getId());
         assertEquals(TournamentSummaryStatusEnum.COMPLETED, summary.status());

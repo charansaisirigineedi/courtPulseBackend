@@ -18,6 +18,7 @@ import com.amigos.courtpulse.entity.TournamentSummary;
 import com.amigos.courtpulse.enums.PlayerSideEnum;
 import com.amigos.courtpulse.enums.RoundNameEnum;
 import com.amigos.courtpulse.enums.TournamentPlacementEnum;
+import com.amigos.courtpulse.enums.TournamentStatusEnum;
 import com.amigos.courtpulse.enums.TournamentSummaryStatusEnum;
 import com.amigos.courtpulse.enums.TournamentTypeEnum;
 import com.amigos.courtpulse.enums.WinnerSideEnum;
@@ -127,8 +128,11 @@ public class PlayerAnalyticsServiceImpl implements PlayerAnalyticsService {
             playerClubStatsRepository.save(clubStats);
         }
 
-        if (ObjectUtil.isEqual(match.getRoundName(), RoundNameEnum.FINAL)) {
+        boolean finalMatch = ObjectUtil.isEqual(match.getRoundName(), RoundNameEnum.FINAL);
+        if (finalMatch) {
             applyFinalOutcome(matchPlayers, tournamentSummary);
+            tournament.setStatus(TournamentStatusEnum.COMPLETED);
+            tournamentMetadataRepository.save(tournament);
         }
 
         tournamentSummaryRepository.save(tournamentSummary);
@@ -143,6 +147,11 @@ public class PlayerAnalyticsServiceImpl implements PlayerAnalyticsService {
                 club.getClubCode(),
                 tournament.getId()
         );
+        if (finalMatch) {
+            cacheEvictionService.evictTournamentDetails(tournament.getId());
+            cacheEvictionService.evictClubTournaments(club.getId(), club.getClubCode());
+            log.info("Tournament ID: {} marked COMPLETED after final match ID: {}", tournament.getId(), matchId);
+        }
 
         log.info("Processed analytics for match ID {} in tournament ID {}{}",
                 matchId,

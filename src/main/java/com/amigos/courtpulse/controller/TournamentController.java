@@ -1,5 +1,7 @@
 package com.amigos.courtpulse.controller;
 
+import com.amigos.courtpulse.dto.analytics.LiveMatchAnalyticsRequest;
+import com.amigos.courtpulse.dto.analytics.LiveMatchAnalyticsResponse;
 import com.amigos.courtpulse.dto.analytics.TournamentSummaryResponse;
 import com.amigos.courtpulse.dto.common.ApiResponse;
 import com.amigos.courtpulse.dto.tournament.CreateTournamentRequest;
@@ -7,6 +9,7 @@ import com.amigos.courtpulse.dto.tournament.CreateTournamentResponse;
 import com.amigos.courtpulse.dto.tournament.SyncMatchResultRequest;
 import com.amigos.courtpulse.dto.tournament.SyncMatchResultResponse;
 import com.amigos.courtpulse.dto.tournament.TournamentResponse;
+import com.amigos.courtpulse.service.LiveMatchAnalyticsService;
 import com.amigos.courtpulse.service.PlayerAnalyticsService;
 import com.amigos.courtpulse.service.TournamentService;
 import com.amigos.courtpulse.service.TournamentMatchService;
@@ -33,6 +36,7 @@ public class TournamentController {
     private final TournamentService tournamentService;
     private final TournamentMatchService tournamentMatchService;
     private final PlayerAnalyticsService playerAnalyticsService;
+    private final LiveMatchAnalyticsService liveMatchAnalyticsService;
 
     @PostMapping("/api/v1/tournaments")
     public ResponseEntity<ApiResponse<CreateTournamentResponse>> createTournament(
@@ -75,6 +79,15 @@ public class TournamentController {
     ) {
         TournamentSummaryResponse response = playerAnalyticsService.getTournamentSummary(tournamentId);
         return ResponseUtil.ok("Tournament summary fetched successfully", response);
+    }
+
+    @PostMapping("/api/v1/tournaments/{tournamentId}/live-match-analytics")
+    public ResponseEntity<ApiResponse<LiveMatchAnalyticsResponse>> getLiveMatchAnalytics(
+            @PathVariable Long tournamentId,
+            @Valid @RequestBody LiveMatchAnalyticsRequest request
+    ) {
+        LiveMatchAnalyticsResponse response = liveMatchAnalyticsService.getLiveMatchAnalytics(tournamentId, request);
+        return ResponseUtil.ok("Live match analytics fetched successfully", response);
     }
 
     private String playerCode(Jwt jwt) {

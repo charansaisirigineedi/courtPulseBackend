@@ -1,7 +1,10 @@
 package com.amigos.courtpulse.mapper;
 
 import com.amigos.courtpulse.dto.analytics.ClubCompletedTournamentResponse;
+import com.amigos.courtpulse.dto.analytics.HeadToHeadResponse;
+import com.amigos.courtpulse.dto.analytics.LiveMatchPlayerResponse;
 import com.amigos.courtpulse.dto.analytics.PartnerSummaryResponse;
+import com.amigos.courtpulse.dto.analytics.PartnershipStatsResponse;
 import com.amigos.courtpulse.dto.analytics.PlayerClubAnalyticsResponse;
 import com.amigos.courtpulse.dto.analytics.PlayerLifetimeAnalyticsResponse;
 import com.amigos.courtpulse.dto.analytics.PlayerTournamentAnalyticsResponse;
@@ -157,6 +160,59 @@ public class PlayerAnalyticsMapper {
                 winsTogether,
                 computeWinRatio(winsTogether, matchesTogether - winsTogether)
         );
+    }
+
+    public LiveMatchPlayerResponse toLiveMatchPlayerResponse(Player player, PlayerTournamentStats stats) {
+        if (ObjectUtil.isNull(stats)) {
+            return new LiveMatchPlayerResponse(
+                    player.getPlayerCode(),
+                    player.getName(),
+                    player.getGameName(),
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    null,
+                    null,
+                    null
+            );
+        }
+        return new LiveMatchPlayerResponse(
+                player.getPlayerCode(),
+                player.getName(),
+                player.getGameName(),
+                stats.getMatchesPlayed(),
+                stats.getMatchesWon(),
+                stats.getMatchesLost(),
+                stats.getMatchesDrawn(),
+                stats.getPointsScored(),
+                stats.getPointsConceded(),
+                computeWinRatio(stats.getMatchesWon(), stats.getMatchesLost()),
+                stats.getBestRoundReached(),
+                stats.getTournamentPlacement()
+        );
+    }
+
+    public PartnershipStatsResponse toPartnershipStats(int matchesTogether, int winsTogether) {
+        return new PartnershipStatsResponse(
+                matchesTogether,
+                winsTogether,
+                computeWinRatio(winsTogether, matchesTogether - winsTogether)
+        );
+    }
+
+    public HeadToHeadResponse toHeadToHead(int matchesPlayed, int teamAWins, int teamBWins, int draws) {
+        return new HeadToHeadResponse(matchesPlayed, teamAWins, teamBWins, draws);
+    }
+
+    public HeadToHeadResponse emptyHeadToHead() {
+        return new HeadToHeadResponse(0, 0, 0, 0);
+    }
+
+    public PartnershipStatsResponse emptyPartnershipStats() {
+        return new PartnershipStatsResponse(0, 0, null);
     }
 
     private Double computeWinRatio(int wins, int losses) {

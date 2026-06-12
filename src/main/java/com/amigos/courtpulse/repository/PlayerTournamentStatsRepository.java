@@ -63,4 +63,15 @@ public interface PlayerTournamentStatsRepository extends JpaRepository<PlayerTou
             @Param("playerCode") String playerCode,
             @Param("tournamentId") Long tournamentId
     );
+
+    @Query("""
+            SELECT s
+            FROM PlayerTournamentStats s
+            WHERE s.player.id IN :playerIds
+              AND s.tournament.id = :tournamentId
+            """)
+    List<PlayerTournamentStats> findByPlayerIdsAndTournamentId(
+            @Param("playerIds") List<Long> playerIds,
+            @Param("tournamentId") Long tournamentId
+    );
 }
