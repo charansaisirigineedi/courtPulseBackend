@@ -36,6 +36,7 @@ public class PlayerAnalyticsMapper {
 
         return new PlayerLifetimeAnalyticsResponse(
                 player.getPlayerCode(),
+                valueOrZero(stats, PlayerLifetimeStats::getTournamentsPlayed),
                 matchesPlayed,
                 matchesWon,
                 matchesLost,

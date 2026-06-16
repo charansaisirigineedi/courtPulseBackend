@@ -140,6 +140,11 @@ public class PlayerLifetimeStats {
     @Setter
     private int bestWinStreak = 0;
 
+    @Builder.Default
+    @Column(name = "tournaments_played", nullable = false)
+    @Setter
+    private int tournamentsPlayed = 0;
+
     @Column(name = "last_match_at")
     @Setter
     private LocalDateTime lastMatchAt;

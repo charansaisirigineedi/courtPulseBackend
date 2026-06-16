@@ -109,6 +109,7 @@ public class PlayerAnalyticsServiceImpl implements PlayerAnalyticsService {
             if (tournamentStats.getMatchesPlayed() == 0) {
                 firstParticipationInTournament = true;
                 tournamentSummary.setParticipantCount(tournamentSummary.getParticipantCount() + 1);
+                lifetimeStats.setTournamentsPlayed(lifetimeStats.getTournamentsPlayed() + 1);
             }
 
             applyMatchCounters(lifetimeStats, outcome, pointsScored, pointsConceded, doublesTournament, match);

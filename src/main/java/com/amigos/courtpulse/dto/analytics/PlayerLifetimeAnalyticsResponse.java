@@ -5,6 +5,7 @@ import java.util.List;
 
 public record PlayerLifetimeAnalyticsResponse(
         String playerCode,
+        int tournamentsPlayed,
         int matchesPlayed,
         int matchesWon,
         int matchesLost,
